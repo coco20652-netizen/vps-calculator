@@ -29,6 +29,23 @@
         .csel-option { padding: 8px 12px; font-size: 13px; font-weight: 600; border-radius: 10px; cursor: pointer; }
         .csel-option:hover { background: #f0fdf4; color: #00BFA5; }
         .progress-bar { background: linear-gradient(90deg, #00BFA5, #00e5cc); box-shadow: 0 0 8px rgba(0,191,165,.5); border-radius: 99px; height: 100%; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+    /* =========================================
+   Edge/Chrome 日期输入框防遮挡优化补丁
+   ========================================= */
+input[type="date"] {
+    padding-left: 10px !important;
+    padding-right: 4px !important; 
+    letter-spacing: -0.5px !important; 
+    min-width: 0; 
+}
+
+/* 强行接管 Edge 和 Chrome 自带的日历图标排版，释放空间 */
+input::-webkit-calendar-picker-indicator {
+    margin-left: 0px !important;
+    padding: 0px !important;
+    width: 16px !important; 
+    cursor: pointer;
+}
     </style>
 </head>
 <body class="p-4 md:p-8">
