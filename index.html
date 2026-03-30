@@ -141,7 +141,6 @@ input::-webkit-calendar-picker-indicator {
                         <div class="result-row"><span class="result-label">折合原币</span><span id="resOrig" class="result-value">--</span></div>
                         <div class="result-row"><span class="result-label">实付卖家</span><span id="resActual" class="result-value">¥ --</span></div>
                         <div id="middlemanRow" class="result-row hidden"><span class="result-label" id="middlemanRowLabel">买家中介费</span><span id="resMiddleman" class="result-value text-gray-400">¥ --</span></div>
-                        <div id="totalCostRow" class="result-row hidden text-[#00BFA5]"><span class="result-label text-[#00BFA5]">买家总成本</span><span id="resTotal" class="result-value">¥ --</span></div>
                         <div class="result-row"><span class="result-label">官方日均</span><span id="dayOfficial" class="result-value">--</span></div>
                         <div class="result-row border-none"><span class="result-label text-[#00BFA5]">综合日均</span><span id="dayActual" class="result-value text-[#00BFA5]">--</span></div>
                     </div>
@@ -171,29 +170,30 @@ input::-webkit-calendar-picker-indicator {
                         </div>
                     </div>
 
-                    <!-- 中介费模块 -->
+                    <!-- 统一结算模块 (中介费 + 总成本) -->
                     <div class="mt-6 pt-5 border-t border-white/5">
-                        <label class="flex items-center gap-2 cursor-pointer w-max group">
-                            <div class="relative flex items-center justify-center w-4 h-4 rounded border border-gray-500 bg-white/5 group-hover:border-[#00BFA5] transition-colors">
-                                <input type="checkbox" id="useMiddleman" class="peer sr-only">
-                                <i class="fas fa-check text-[10px] text-[#00BFA5] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
-                            </div>
-                            <span class="text-[11px] font-bold text-gray-400 group-hover:text-gray-200 transition-colors">开启中介担保 (5%)</span>
-                        </label>
-                        
-                        <div id="middlemanResultBox" class="hidden mt-3 rounded-xl p-4 border transition-all" style="background:rgba(0,191,165,0.1); border-color:rgba(0,191,165,0.2);">
-                            <div class="flex justify-between items-center mb-1">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="text-[10px] font-bold transition-colors" id="middlemanFeePrefix" style="color:#00BFA5; opacity:0.8;">含中介费 (+ ¥ 0.00)</span>
-                                    <select id="middlemanPayer" class="bg-black/20 border border-white/20 text-white/80 text-[9px] font-bold rounded px-1 py-0.5 outline-none cursor-pointer hover:border-[#00BFA5] transition-colors">
-                                        <option value="buyer">买家付</option>
-                                        <option value="seller">卖家付</option>
-                                        <option value="split">AA平摊</option>
-                                    </select>
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <div class="relative flex items-center justify-center w-4 h-4 rounded border border-gray-500 bg-white/5 group-hover:border-[#00BFA5] transition-colors">
+                                    <input type="checkbox" id="useMiddleman" class="peer sr-only">
+                                    <i class="fas fa-check text-[10px] text-[#00BFA5] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
                                 </div>
-                                <span id="finalCostLabel" class="text-[10px] font-black uppercase tracking-wider transition-colors" style="color:#00BFA5;">买家最终总支出</span>
+                                <span class="text-[11px] font-bold text-gray-400 group-hover:text-gray-200 transition-colors">开启中介担保 (5%)</span>
+                            </label>
+                            <select id="middlemanPayer" class="bg-black/20 border border-white/20 text-white/80 text-[9px] font-bold rounded px-1 py-0.5 outline-none cursor-pointer hover:border-[#00BFA5] transition-colors">
+                                <option value="buyer">买家付中介</option>
+                                <option value="seller">卖家付中介</option>
+                                <option value="split">AA平摊中介</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 买家最终总支出卡片 (常驻展示，动态变色) -->
+                        <div id="finalCostBox" class="rounded-xl p-4 border transition-all duration-300 bg-white/5 border-white/10">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[10px] font-black uppercase tracking-wider text-[#94a3b8] transition-colors" id="finalCostLabel">买家最终总支出</span>
+                                <span id="extraFeeDetail" class="text-[9px] font-bold text-[#64748b] transition-colors">含额外支出 ¥ 0.00</span>
                             </div>
-                            <div class="text-right font-black text-2xl transition-colors" id="finalTotalCostDisplay" style="color:#00BFA5;">¥ --</div>
+                            <div class="text-right font-black text-2xl text-white transition-colors" id="finalTotalCostDisplay">¥ --</div>
                         </div>
                     </div>
 
@@ -387,9 +387,6 @@ input::-webkit-calendar-picker-indicator {
                 getEl('middlemanRow').classList.toggle('hidden', bMid <= 0);
                 getEl('resMiddleman').innerText = `+ ¥ ${fmt(bMid)}`;
                 
-                getEl('resTotal').innerText = `¥ ${fmt(totalBuyerCost)}`;
-                getEl('totalCostRow').classList.toggle('hidden', (bPush + bMid) <= 0);
-                
                 getEl('premiumBox').classList.remove('hidden');
                 getEl('premiumTitle').innerText = prem >=0 ? '卖家溢价' : '卖家折价';
                 getEl('premiumTitle').style.color = prem >=0 ? '#fbbf24' : '#4ade80';
@@ -398,37 +395,28 @@ input::-webkit-calendar-picker-indicator {
                 
                 getEl('dayActual').innerText = `¥${fmt(totalBuyerCost/days, 3)} / 天`;
                 
-                // UI 颜色控制逻辑
-                const box = getEl('middlemanResultBox');
-                if (middlemanPayer === 'buyer') {
-                    getEl('middlemanFeePrefix').innerHTML = `含中介费 (+ ¥ ${fmt(bMid)})`;
-                    getEl('middlemanFeePrefix').style.color = "#00BFA5"; // 绿色
-                    getEl('finalCostLabel').innerText = "买家最终总支出";
-                    getEl('finalCostLabel').style.color = "#00BFA5";
-                    getEl('finalTotalCostDisplay').innerText = `¥ ${fmt(totalBuyerCost)}`;
+                // --- 新的统一结算面板控制逻辑 ---
+                const finalBox = getEl('finalCostBox');
+                const extraFee = bPush + bMid; // 抓取买家承担的所有额外费用（Push费 + 中介费）
+                
+                getEl('finalTotalCostDisplay').innerText = `¥ ${fmt(totalBuyerCost)}`;
+                getEl('extraFeeDetail').innerText = extraFee > 0 ? `额外支出 (Push/中介) + ¥ ${fmt(extraFee)}` : '无额外买家支出';
+                
+                // 只要产生了买家额外开支，卡片就高亮变绿提醒
+                if (extraFee > 0) {
+                    finalBox.style.backgroundColor = "rgba(0,191,165,0.1)";
+                    finalBox.style.borderColor = "rgba(0,191,165,0.3)";
                     getEl('finalTotalCostDisplay').style.color = "#00BFA5";
-                    box.style.backgroundColor = "rgba(0,191,165,0.1)";
-                    box.style.borderColor = "rgba(0,191,165,0.2)";
-                } else if (middlemanPayer === 'split') {
-                    getEl('middlemanFeePrefix').innerHTML = `AA平摊中介 (+ ¥ ${fmt(bMid)})`;
-                    getEl('middlemanFeePrefix').style.color = "#0ea5e9"; // 天蓝色
-                    getEl('finalCostLabel').innerText = "买家最终总支出";
-                    getEl('finalCostLabel').style.color = "#0ea5e9";
-                    getEl('finalTotalCostDisplay').innerText = `¥ ${fmt(totalBuyerCost)}`;
-                    getEl('finalTotalCostDisplay').style.color = "#0ea5e9";
-                    box.style.backgroundColor = "rgba(14,165,233,0.1)";
-                    box.style.borderColor = "rgba(14,165,233,0.2)";
+                    getEl('finalCostLabel').style.color = "#00BFA5";
+                    getEl('extraFeeDetail').style.color = "#00BFA5";
                 } else {
-                    getEl('middlemanFeePrefix').innerHTML = `卖家扣除中介 (- ¥ ${fmt(middlemanFee)})`;
-                    getEl('middlemanFeePrefix').style.color = "#94a3b8"; // 灰色
-                    getEl('finalCostLabel').innerText = "买家支出不变";
+                    finalBox.style.backgroundColor = "rgba(255,255,255,0.05)";
+                    finalBox.style.borderColor = "rgba(255,255,255,0.1)";
+                    getEl('finalTotalCostDisplay').style.color = "#ffffff";
                     getEl('finalCostLabel').style.color = "#94a3b8";
-                    getEl('finalTotalCostDisplay').innerText = `¥ ${fmt(totalBuyerCost)}`;
-                    getEl('finalTotalCostDisplay').style.color = "#cbd5e1";
-                    box.style.backgroundColor = "rgba(255,255,255,0.05)";
-                    box.style.borderColor = "rgba(255,255,255,0.1)";
+                    getEl('extraFeeDetail').style.color = "#64748b";
                 }
-                box.classList.toggle('hidden', !isMiddleman);
+                // ------------------------------
                 
                 getEl('valueRatioBox').classList.remove('hidden');
                 const totalPart = resCNY + Math.max(0, prem) || 1;
@@ -438,11 +426,19 @@ input::-webkit-calendar-picker-indicator {
                 getEl('premiumBox').classList.add('hidden');
                 getEl('resActual').innerText = '¥ --';
                 getEl('middlemanRow').classList.add('hidden');
-                getEl('totalCostRow').classList.add('hidden');
                 getEl('dayActual').innerText = '--';
                 getEl('valueRatioBox').classList.add('hidden');
                 getEl('barValue').style.width = '100%'; getEl('barPremium').style.width = '0%';
-                getEl('middlemanResultBox').classList.add('hidden');
+                
+                getEl('finalTotalCostDisplay').innerText = '¥ --';
+                getEl('extraFeeDetail').innerText = '含额外支出 ¥ 0.00';
+                getEl('finalTotalCostDisplay').style.color = "#ffffff";
+                getEl('finalCostLabel').style.color = "#94a3b8";
+                getEl('extraFeeDetail').style.color = "#64748b";
+                if(getEl('finalCostBox')) {
+                    getEl('finalCostBox').style.backgroundColor = "rgba(255,255,255,0.05)";
+                    getEl('finalCostBox').style.borderColor = "rgba(255,255,255,0.1)";
+                }
             }
             getEl('dayOfficial').innerText = `¥${fmt(resCNY/days, 3)} / 天`;
         }
@@ -458,9 +454,17 @@ input::-webkit-calendar-picker-indicator {
             getEl('barValue').style.width = '0%'; getEl('barPremium').style.width = '0%';
             getEl('dayOfficial').innerText = '--'; getEl('dayActual').innerText = '--';
             getEl('resOrig').innerText = '--'; getEl('resActual').innerText = '¥ --';
+            
             getEl('middlemanRow').classList.add('hidden');
-            getEl('totalCostRow').classList.add('hidden');
-            getEl('middlemanResultBox').classList.add('hidden');
+            getEl('finalTotalCostDisplay').innerText = '¥ --';
+            getEl('extraFeeDetail').innerText = '含额外支出 ¥ 0.00';
+            getEl('finalTotalCostDisplay').style.color = "#ffffff";
+            getEl('finalCostLabel').style.color = "#94a3b8";
+            getEl('extraFeeDetail').style.color = "#64748b";
+            if(getEl('finalCostBox')) {
+                getEl('finalCostBox').style.backgroundColor = "rgba(255,255,255,0.05)";
+                getEl('finalCostBox').style.borderColor = "rgba(255,255,255,0.1)";
+            }
         }
 
         window.onload = () => {
