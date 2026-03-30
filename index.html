@@ -268,8 +268,13 @@ input::-webkit-calendar-picker-indicator {
                 });
                 const badge = getEl('rateStatus');
                 badge.classList.remove('hidden');
-                setTimeout(() => badge.classList.add('hidden'), 3000);
-            } catch(e) {}
+            } catch(e) {
+                console.error('汇率获取失败:', e);
+
+  const badge = getEl('rateStatus');
+  badge.textContent = '汇率获取失败，使用默认汇率';
+  badge.classList.remove('hidden');
+            }
             renderRateGrid();
             calculate();
         }
